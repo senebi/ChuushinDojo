@@ -10,10 +10,13 @@
   if(isset($_POST["add-dojo-submit"])){
 	$n=sanitize($_POST["dojoName"]);
 	$c=sanitize($_POST["dojoCity"]);
-	$dojo->addDojo($n, $c);
+	if($dojo->addDojo($n, $c))
+	  setMsg("<div class='success'>A dojo sikeresen hozzáadva.</div>");
+	else setMsg("A dojo már létezik!");
   }
   if(isset($_POST["mod-dojo-submit"])){
-	$dojo->modDojos();
+	if($dojo->modDojos())
+	  setMsg("<div class='success'>A dojók sikeresen módosítva.</div>");
   }
 ?>
 <fieldset>
@@ -26,8 +29,8 @@
 	<p><input type="submit" name="add-dojo-submit" value="Hozzáadás" /></p>
 	<?php
 	  if(isset($_POST["add-dojo-submit"])){
-		$user->getMsg();
-		$user->clearMsg();
+		getMsg();
+		clearMsg();
 	  }
 	?>
   </form>
@@ -45,8 +48,8 @@
 	  </p>
 	  <?php
 		if(isset($_POST["mod-dojo-submit"])){
-		  $user->getMsg();
-		  $user->clearMsg();
+		  getMsg();
+		  clearMsg();
 		}
 		clearErrors();
 	  ?>

@@ -19,9 +19,22 @@
 					$i=0;
 					while(isset($_SESSION[$name][$i]["err_msg"])){
 						unset($_SESSION[$name][$i]["err_msg"]);
+						$i++;
 					}
 				}
 			}
 		}
 	}
+	
+	function setMsg($msg){
+      $_SESSION["msg"]=$msg;
+    }
+    
+    function getMsg(){
+      if(isset($_SESSION["msg"])) echo $_SESSION["msg"];
+    }
+    
+    function clearMsg(){
+      unset($_SESSION["msg"]);
+    }
 ?>

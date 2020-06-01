@@ -60,7 +60,7 @@
   </header>
   <?php
     if($page->getTitle()!="Bejelentkezés"){
-      $user->getMsg();
-      $user->clearMsg();
+      getMsg();
+      clearMsg();
     }
   ?>

@@ -3,8 +3,9 @@
     private $name;
     private $city;
     
-    public function __construct(){
-      
+    public function __construct($name=null, $city=null){
+      if(!is_null($name)) $this->name=$name;
+	  if(!is_null($city)) $this->city=$city;
     }
     
     /*
@@ -77,15 +78,14 @@
      */
     public function addDojo($name, $city){
       global $conn;
-      $user=new User();
       $ok=true;
       $prefix="<div class='error'>";
       if($name==""){
-        $_SESSION["dojoName"]["err_msg"]=$prefix."Hiba: A dojo neve nem lehet üres!</div>";
+        $_SESSION["dojoName"]["err_msg"]=$prefix."A dojo neve nem lehet üres!</div>";
         $ok=false;
       }
       if($city==""){
-        $_SESSION["dojoCity"]["err_msg"]=$prefix."Hiba: A város nem lehet üres!</div>";
+        $_SESSION["dojoCity"]["err_msg"]=$prefix."A város nem lehet üres!</div>";
         $ok=false;
       }
       
@@ -96,9 +96,10 @@
 						SELECT nev, varos FROM ".DOJOS." WHERE nev='".$name."' and varos='".$city.
 					"') LIMIT 1";
         $res=$conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
-        if($conn->affected_rows>0) $user->setMsg("<div class='success'>A dojo sikeresen hozzáadva.</div>");
-        else $user->setMsg("A dojo már létezik!");
+        if(!$conn->affected_rows>0) $ok=false;
       }
+	  
+	  return $ok;
     }
     
     /*
@@ -106,7 +107,6 @@
      */
     public function modDojos(){
       global $conn;
-      $user=new User();
       $ok=true;
       $prefix="<div class='error'>";
       
@@ -116,19 +116,19 @@
         $dojoCity=sanitize($_POST["dojoCity"][$i]);
         
         if($dojoName==""){
-          $_SESSION["dojoName"][$i]["err_msg"]=$prefix."Hiba: A dojo neve nem lehet üres!</div>";
+          $_SESSION["dojoName"][$i]["err_msg"]=$prefix."A dojo neve nem lehet üres!</div>";
           $ok=false;
         }
-        else if($dojoCity==""){
-          $_SESSION["dojoCity"][$i]["err_msg"]=$prefix."Hiba: A város nem lehet üres!</div>";
+        if($dojoCity==""){
+          $_SESSION["dojoCity"][$i]["err_msg"]=$prefix."A város nem lehet üres!</div>";
           $ok=false;
         }
-        else{
+        if($dojoName!="" && $dojoCity!=""){
           $sql="UPDATE ".DOJOS." set nev='".$_POST["dojoName"][$i]."', varos='".$_POST["dojoCity"][$i]."' where id=".$_POST["dojoId"][$i];
           $res=$conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
         }
       }
-      if($ok) $user->setMsg("<div class='success'>A dojók sikeresen módosítva.</div>");
+
       return $ok;
     }
   }

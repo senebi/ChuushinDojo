@@ -25,6 +25,6 @@
 </form>
 <a href="forgotten-password">Elfelejtett jelszó</a>
 <?php
-  $user->getMsg();
-  $user->clearMsg();
+  getMsg();
+  clearMsg();
 ?>
