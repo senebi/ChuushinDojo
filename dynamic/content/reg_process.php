@@ -1,10 +1,4 @@
 <?php
-if(!isset($subCount)){
-	$subCount=substr_count(dirname($_SERVER["PHP_SELF"]), "/")-2;
-	$rootDir=str_repeat("../", $subCount);
-	header("location: ".$rootDir."index.php?pid=1");
-    exit();
-  }
 	session_start();
 	include_once("../includes/config/dbnames.inc.php");
 	include_once("../includes/config/connect.inc.php");
@@ -17,10 +11,12 @@ if(!isset($subCount)){
 		$validated=$user->validateRegister($_POST);
 		if($validated){
 			$user->register($validated);
+			
+			if($_SESSION["reg_success"] && $user->notifyByEmail($validated))
+				header("location: ../index.php?redirect=reg_state");
 		}
-		else{
+		else
 			header("location: ../index.php?pid=".$_POST["reg_id"]);
-		}
 	}
 	else header("location: ../index.php?pid=404");
 ?>

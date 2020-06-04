@@ -122,14 +122,14 @@
         //defining error cases
         if($val==""){
           $success=false;
-          $msg="Hiba: A mező kitöltése kötelező!";
+          $msg="A mező kitöltése kötelező!";
         }
         else{
           if($attr_name=="reg_user"){
             //in case of wrong format or length
             if(!preg_match("/^[a-z]+[0-9]*(\.|_)*[a-z0-9]*(\.|_)*[a-z0-9]*$/", $val) || strlen($val)<5){
               $success=false;
-              $msg="Hiba: A felhasználónév formátuma nem megfelelő!";
+              $msg="A felhasználónév formátuma nem megfelelő!";
             }
             else{
               $res=$conn->query("select * from ".USERS." where felhasznalonev='$val'") or die($conn->error." on line <b>".__LINE__."</b>");
@@ -145,7 +145,7 @@
             //if not, it's in wrong format
             if(strpos($val," ")===false){
               $success=false;
-              $msg="Hiba: Hiányzó vezetéknév vagy keresztnév!";
+              $msg="Hiányzó vezetéknév vagy keresztnév!";
             }
             else{
               $tmp=explode(" ",mb_strtolower($val));
@@ -159,7 +159,7 @@
             //check e-mail format
             if(!filter_var($val, FILTER_VALIDATE_EMAIL)){
               $success=false;
-              $msg="Hiba: Az e-mail cím formátuma nem megfelelő!";
+              $msg="Az e-mail cím formátuma nem megfelelő!";
             }
           }
           else if($attr_name=="birthYear"){
@@ -193,24 +193,24 @@
             //in case of wrong format
             if(!preg_match("/^.*(?=.*\d).*(?=.*\d).{8,}$/", $val)){
               $success=false;
-              $msg="Hiba: Rossz a jelszó hossza vagy formátuma!";
+              $msg="Rossz a jelszó hossza vagy formátuma!";
             }
             else if($dotFormat || $slashFormat || $dashFormat || $noFormat){
               //if password contains the birth date in any of the formats mentioned above
               $success=false;
-              $msg="Hiba: A jelszó nem tartalmazhatja a születési dátumot!";
+              $msg="A jelszó nem tartalmazhatja a születési dátumot!";
             }
             else if(strpos($val, $modData["reg_user"])!==false){
               //if password contains the user name
               $success=false;
-              $msg="Hiba: A jelszó nem tartalmazhatja a felhasználónevet!";
+              $msg="A jelszó nem tartalmazhatja a felhasználónevet!";
             }
           }
           else if($attr_name=="passAgain"){
             //check if the two passwords match
             if($val!=$modData["reg_pass"]){
               $success=false;
-              $msg="Hiba: A jelszavak nem egyeznek!";
+              $msg="A jelszavak nem egyeznek!";
             }
           }
         }
@@ -222,7 +222,7 @@
       $msg="";
       //if error happened to any of the birth date parts or the date is greater than the current date
       if(!$birthParts)
-        $msg="Hiba: A születési dátum formátuma vagy értéke nem megfelelő!";
+        $msg="A születési dátum formátuma vagy értéke nem megfelelő!";
       $_SESSION["birthDate"]=array("val" => $modData["birthYear"]."-".$modData["birthMonth"]."-".$modData["birthDay"], "err_msg" => $msg);
       
       $modData["birthDate"]=$modData["birthYear"]."-".$modData["birthMonth"]."-".$modData["birthDay"];
@@ -252,10 +252,45 @@
       values ('$user','$pass',$salt,'$name','$email','$birthDate')";
       $res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
       
-      if($res){
+      if($res)
         $_SESSION["reg_success"]=true;
-        header("location: ../index.php?redirect=reg_state");
+    }
+    
+    public function notifyByEmail($data){
+      global $conn;
+      $ok=true;
+      
+      //get every admins and trainers who are connected to the same dojo as the new user
+      $sql = "select * from ".USERS." inner join ".MEMBERSHIPS." on
+      ".USERS.".id=".MEMBERSHIPS.".tag_id where jog='admin' or jog='edző' and dojo_id=".$data["dojo"];
+      $res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+      
+      if($res->num_rows){
+        $subject="Új regisztrációs igény a Dojo kezelőben";
+        $headers="From: dojokezelo <sample@dojokezelo.hu>\r\n";
+        $headers.="Reply-To: sample@dojokezelo.hu\r\n";
+        $headers.="Content-type: text/html; charset=utf-8\r\n";
+        
+        while($row=$res->fetch_assoc()){
+          $to=$row["email"];
+          $msg="<p>Kedves <b>".$row["felhasznalonev"]."</b>!</p>";
+          $msg.="<p>".$data["fullName"]." (".$data["reg_user"].") szeretne regisztrálni a Dojo kezelőbe.<br />
+          Kérlek, jelentkezz be és hagyd jóvá a \"Tagok kezelése\" menüpontban, ha hiteles a profilja.</p>";
+          $msg.="<p><a href='localhost/chuushindojo/dynamic/index.php?pid=3'>Dojo kezelő honlap</a></p>";
+          $msg.="<p>Üdvözlettel:<br />Dojo kezelő</p>";
+          
+          if(!mail($to, "=?utf-8?B?".base64_encode($subject)."?=", $msg, $headers)){
+            $ok=false;
+            setMsg("<div class='error'>Legalább 1 illetékes (e-mailes) értesítése sikertelen a regisztrációs szándékról!</div>");
+          }
+        }
       }
+      else{
+        setMsg("<div class='error'>Nincs felhasználó, aki aktiválhatná a fiókod!</div>");
+        $ok=false;
+      }
+      
+      return $ok;
     }
     
     public function validate($type=null, $val){
