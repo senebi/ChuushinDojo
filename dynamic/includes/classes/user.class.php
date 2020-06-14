@@ -97,7 +97,9 @@
         return false;
       }
       else{
-        $sql = "select * from ".USERS." where id=".$this->id;
+        $sql = "select u.*, d.nev as dojoNev, d.varos from ".USERS." as u inner join ".MEMBERSHIPS." as m on ".
+        "u.id=m.tag_id inner join ".DOJOS." as d on ".
+        "m.dojo_id=d.id where u.id=".$this->id;
         $res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
         if($res->num_rows){
           $data=$res->fetch_assoc();
@@ -247,12 +249,16 @@
       $name=$data["fullName"];
       $email=$data["email"];
       $birthDate=$data["birthDate"];
-      
-      $sql = "insert into ".USERS." (felhasznalonev, jelszo, so, nev, email, szuletesi_datum)
-      values ('$user','$pass',$salt,'$name','$email','$birthDate')";
+      $dojoId=$data["dojo"];
+
+      $sql = "insert into ".USERS." (felhasznalonev, jelszo, so, nev, email, szuletesi_datum, reg_datum)
+      values ('$user','$pass',$salt,'$name','$email','$birthDate','".date("Y-m-d")."')";
       $res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+      $userId=$conn->insert_id;
       
-      if($res)
+      $membershipSql="insert into ".MEMBERSHIPS." (dojo_id, tag_id) values (".$dojoId.",".$userId.")";
+      $res2 = $conn->query($membershipSql) or die($conn->error." on line <b>".__LINE__."</b>");
+      if($res && $res2)
         $_SESSION["reg_success"]=true;
     }
     
@@ -291,6 +297,50 @@
       }
       
       return $ok;
+    }
+    
+    public function getMembers($active=false){
+      global $conn;
+      $sql="select * from ".USERS." where aktiv=";
+      if($active) $sql.="1";
+      else $sql.="0";
+      
+      $output="";
+      $res=$conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+      if($res->num_rows){
+        $action="content/";
+        $action.=($active) ? "edit_members.php" : "activate_members.php";
+        $output.='<form method="post" action="'.$action.'">';
+        while($row=$res->fetch_assoc()){
+          $output.="<div>";
+          $output.="<input type='checkbox' checked='checked' name='";
+          if(!$active) $output.="activateUser[]";
+          else $output.="editUser[]";
+          $output.="' value='".$row["id"]."' />&nbsp;";
+          $output.="<input type='hidden' name='names[]' value='".$row["nev"]."' />";
+          $output.=$row["nev"]." (".$row["felhasznalonev"]."), regisztrált: ".$row["reg_datum"].", rang:&nbsp;";
+          if(!$active){
+            $output.="<select name='rank[]'>";
+            $output.="<option value='tag'";
+            $output.=($row["jog"]=="tag") ? " selected='selected'" : "";
+            $output.=">tag</option>";
+            $output.="<option value='edző'";
+            $output.=($row["jog"]=="edző") ? " selected='selected'" : "";
+            $output.=">edző</option>";
+            $output.="</select>";
+          }
+          else $output.=$row["jog"];
+          $output.="</div>";
+        }
+        $submitName=(!$active) ? "activate-submit" : "edit-submit";
+        $submitVal=(!$active) ? "Kijelöltek aktiválása" : "Kijelöltek szerkesztése";
+        //$disabled=(!$active) ? " disabled='disabled'" : ""; //-----to be enabled in JS only (after page load)!-----
+        $disabled="";
+        $output.="<p><input type='submit' name='".$submitName."' value='".$submitVal."'".$disabled." /></p>";
+        $output.="</form>";
+      }
+      else $output=false;
+      return $output;
     }
     
     public function validate($type=null, $val){

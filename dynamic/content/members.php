@@ -6,6 +6,20 @@
     exit();
   }
 ?>
-<p>
-  Aloldal tartalmi része.
-</p>
+<fieldset>
+  <legend>Inaktív tagok</legend>
+  <?php
+	$inactMembers=$user->getMembers(0);
+	if($inactMembers) echo $inactMembers;
+	else echo "Nincsenek inaktív tagok.";
+  ?>
+</fieldset>
+
+<fieldset>
+  <legend>Aktív tagok</legend>
+  <?php
+	$actMembers=$user->getMembers(1);
+	if($actMembers) echo $actMembers;
+	else echo "Nincsenek tagok.";
+  ?>
+</fieldset>

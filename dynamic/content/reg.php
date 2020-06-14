@@ -126,10 +126,12 @@
     </tr>-->
   </table>
   <p>
-    <a href="javascript:history.back()">Vissza</a>
     <input type="submit" name="submit" value="Regisztráció" />
+	<input type="hidden" name="reg_id" value="<?php echo $_GET["pid"]; ?>" />
   </p>
-  <input type="hidden" name="reg_id" value="<?php echo $_GET["pid"]; ?>" />
+  <p>
+	<a href="javascript:history.back()">Vissza</a>
+  </p>
 </form>
 <?php
   clearErrors();
