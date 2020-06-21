@@ -20,9 +20,21 @@
   $userCount=count($_POST["activateUser"]);
   $users=$_POST["activateUser"];
   $ranks=$_POST["rank"];
-  $names=$_POST["names"];
+  $user=new User();
+  
   echo "<h2>Aktiválandók:</h2>";
   for($i=0; $i<$userCount; $i++){
-	echo "<div>".$names[$i]." (".$users[$i].") mint ".$ranks[$i]."</div>";
+	$id=sanitize($users[$i]);
+	$rank=sanitize($ranks[$i]);
+	$name=getSpecificName($id);
+	echo "<div>".$name." (".$id.") mint ".$rank."</div>";
+	$sql="update ".USERS." set aktiv=1, jog='".$rank."' where id=".$id;
+	$res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+	$userData=array("id" => $id, "nev" => $name, "email" => getSpecificMail($id));
+	
+	if($user->notifyByEmail($userData,"approve")){
+	  setMsg("<div class='success'>Sikeres aktiválás.</div>");
+	  header("location: ../index.php?pid=5");
+	}
   }
 ?>

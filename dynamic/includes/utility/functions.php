@@ -37,4 +37,36 @@
     function clearMsg(){
       unset($_SESSION["msg"]);
     }
+	
+	function getSpecificName($id=null){
+		if(is_null($id)){
+			setMsg("<div class='error'>A felhasználó azonosítóját kötelező megadni!</div>");
+			return false;
+		}
+		else{
+			global $conn;
+			$sql="select nev from ".USERS." where id=".$id;
+			$res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+			if($res->num_rows)
+				$name=$res->fetch_assoc()["nev"];
+			else $name="Nincs ilyen felhasználó.";
+			return $name;
+		}
+	}
+	
+	function getSpecificMail($id=null){
+		if(is_null($id)){
+			setMsg("<div class='error'>A felhasználó azonosítóját kötelező megadni!</div>");
+			return false;
+		}
+		else{
+			global $conn;
+			$sql="select email from ".USERS." where id=".$id;
+			$res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+			if($res->num_rows)
+				$mail=$res->fetch_assoc()["email"];
+			else $mail="Nincs ilyen felhasználó.";
+			return $mail;
+		}
+	}
 ?>

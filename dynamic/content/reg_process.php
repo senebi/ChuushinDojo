@@ -9,11 +9,14 @@
 	if(isset($_POST["reg_id"])){
 		$user=new User();
 		$validated=$user->validateRegister($_POST);
-		if($validated){
-			$user->register($validated);
-			
-			if($_SESSION["reg_success"] && $user->notifyByEmail($validated))
-				header("location: ../index.php?redirect=reg_state");
+		if($validated){			
+			if($user->register($validated)){
+				if($user->notifyByEmail($validated,"reg"))
+					$_SESSION["reg_state"]="success";
+				else $_SESSION["reg_state"]="fail_notify";
+			}
+			else $_SESSION["reg_state"]="fail_reg";
+			header("location: ../index.php?redirect=reg_state");
 		}
 		else
 			header("location: ../index.php?pid=".$_POST["reg_id"]);

@@ -19,7 +19,7 @@
       <td><label for="reg_user">Felhasználónév: </label></td>
       <td>
         <input type="text" name="reg_user" value="<?php if(isset($_SESSION["reg_user"])) echo $_SESSION["reg_user"]["val"]; ?>" />
-        <div>Legalább 5 karakter, csak ékezetmentes kisbetűt (az elején), pontot (.), alulvonást (_) és számot tartalmazhat.</div>
+        <div>Legalább 5 karakter, csak ékezetmentes betűt (az elején kötelező), pontot (.), alulvonást (_) és számot tartalmazhat.</div>
         <div class="error"><?php if(isset($_SESSION["reg_user"])) echo $_SESSION["reg_user"]["err_msg"]; ?></div>
       </td>
     </tr>

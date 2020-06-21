@@ -9,6 +9,7 @@
      * last char: Is visible to admins? (0/1)
      * Example of guest user permission mask: 1___
      */
+    private $dojoId;
     
     public function __construct(){
       //set default values
@@ -45,6 +46,7 @@
                   $this->permissions = $permTable[$data["jog"]];
                   $_SESSION["userid"] = $this->id;
                   $_SESSION["userperm"] = $this->permissions;
+                  
                   setMsg("<div class='success'>Sikeres bejelentkezés.</div>");
                 }
                 else setMsg("<div class='error'>Helytelen felhasználónév vagy jelszó!</div>");
@@ -56,6 +58,21 @@
           else setMsg("<div class='error'>A bejelentkezési adatok kitöltése kötelező!</div>");
         }
       }
+      $sql="select d.id from ".MEMBERSHIPS." as m inner join ".DOJOS.
+      " as d on m.dojo_id=d.id where m.tag_id=".$this->id." order by d.id limit 1";
+      $res2 = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+      $row=$res2->fetch_assoc();
+      $this->dojoId=$row["id"];
+    }
+    
+    public function readDojoId(){
+      global $conn;
+      
+      $sql="select d.id from ".MEMBERSHIPS." as m inner join ".DOJOS.
+      " as d on m.dojo_id=d.id where m.tag_id=".$this->id." order by d.id limit 1";
+      $res2 = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+      $row=$res2->fetch_assoc();
+      $this->dojoId=$row["id"];
     }
   
     public function isLoggedIn(){
@@ -129,7 +146,7 @@
         else{
           if($attr_name=="reg_user"){
             //in case of wrong format or length
-            if(!preg_match("/^[a-z]+[0-9]*(\.|_)*[a-z0-9]*(\.|_)*[a-z0-9]*$/", $val) || strlen($val)<5){
+            if(!preg_match("/^[a-zA-Z]+[0-9]*(\.|_)*[a-z0-9]*(\.|_)*[a-z0-9]*$/", $val) || strlen($val)<5){
               $success=false;
               $msg="A felhasználónév formátuma nem megfelelő!";
             }
@@ -250,50 +267,71 @@
       $email=$data["email"];
       $birthDate=$data["birthDate"];
       $dojoId=$data["dojo"];
+      $rank=$data["rank"];
 
-      $sql = "insert into ".USERS." (felhasznalonev, jelszo, so, nev, email, szuletesi_datum, reg_datum)
-      values ('$user','$pass',$salt,'$name','$email','$birthDate','".date("Y-m-d")."')";
+      $sql = "insert into ".USERS." (felhasznalonev, jelszo, so, nev, email, szuletesi_datum, reg_datum, jog)
+      values ('$user','$pass',$salt,'$name','$email','$birthDate','".date("Y-m-d")."', '$rank')";
       $res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
       $userId=$conn->insert_id;
       
       $membershipSql="insert into ".MEMBERSHIPS." (dojo_id, tag_id) values (".$dojoId.",".$userId.")";
       $res2 = $conn->query($membershipSql) or die($conn->error." on line <b>".__LINE__."</b>");
       if($res && $res2)
-        $_SESSION["reg_success"]=true;
+        return true;
+      else return false;
     }
     
-    public function notifyByEmail($data){
+    public function notifyByEmail($data, $process){
       global $conn;
       $ok=true;
       
-      //get every admins and trainers who are connected to the same dojo as the new user
-      $sql = "select * from ".USERS." inner join ".MEMBERSHIPS." on
-      ".USERS.".id=".MEMBERSHIPS.".tag_id where jog='admin' or jog='edző' and dojo_id=".$data["dojo"];
-      $res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
-      
-      if($res->num_rows){
-        $subject="Új regisztrációs igény a Dojo kezelőben";
+      if($process=="reg"){
+        //get every admins and trainers who are connected to the same dojo as the new user
+        $sql = "select * from ".USERS." inner join ".MEMBERSHIPS." on
+        ".USERS.".id=".MEMBERSHIPS.".tag_id where (jog='admin' or jog='edző' and dojo_id=".$data["dojo"].") and aktiv=1";
+        $res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+        
+        if($res->num_rows){
+          $subject="Új regisztrációs igény a Dojo kezelőben";
+          $headers="From: dojokezelo <sample@dojokezelo.hu>\r\n";
+          $headers.="Reply-To: sample@dojokezelo.hu\r\n";
+          $headers.="Content-type: text/html; charset=utf-8\r\n";
+          
+          while($row=$res->fetch_assoc()){
+            $to=$row["email"];
+            $msg="<p>Kedves <b>".$row["felhasznalonev"]."</b>!</p>";
+            $msg.="<p>".$data["fullName"]." (".$data["reg_user"].") szeretne regisztrálni a Dojo kezelőbe.<br />
+            Kérlek, jelentkezz be és hagyd jóvá a \"Tagok kezelése\" menüpontban, ha hiteles a profilja.</p>";
+            $msg.="<p><a href='localhost/chuushindojo/dynamic/index.php?pid=3'>Dojo kezelő honlap</a></p>";
+            $msg.="<p>Üdvözlettel:<br />Dojo kezelő</p>";
+            
+            if(!mail($to, "=?utf-8?B?".base64_encode($subject)."?=", $msg, $headers)){
+              $ok=false;
+              setMsg("<div class='error'>Legalább 1 illetékes (e-mailes) értesítése sikertelen a regisztrációs szándékról!</div>");
+            }
+          }
+        }
+        else{
+          setMsg("<div class='error'>Nincs felhasználó, aki aktiválhatná a fiókod!</div>");
+          $ok=false;
+        }
+      }
+      elseif($process=="approve"){
+        $subject="Regisztráció jóváhagyva";
         $headers="From: dojokezelo <sample@dojokezelo.hu>\r\n";
         $headers.="Reply-To: sample@dojokezelo.hu\r\n";
         $headers.="Content-type: text/html; charset=utf-8\r\n";
+
+        $to=$data["email"];
+        $msg="<p>Kedves <b>".$data["nev"]."</b>!</p>";
+        $msg.="<p>Egy admin vagy a dojód edzője jóváhagyta a regisztrációd a Dojo kezelőben.<br />
+        Az oldal funkcióinak használatához kérlek, jelentkezz be: <a href='localhost/chuushindojo/dynamic/index.php?pid=3'>Dojo kezelő honlap</a></p>";
+        $msg.="<p>Üdvözlettel:<br />Dojo kezelő</p>";
         
-        while($row=$res->fetch_assoc()){
-          $to=$row["email"];
-          $msg="<p>Kedves <b>".$row["felhasznalonev"]."</b>!</p>";
-          $msg.="<p>".$data["fullName"]." (".$data["reg_user"].") szeretne regisztrálni a Dojo kezelőbe.<br />
-          Kérlek, jelentkezz be és hagyd jóvá a \"Tagok kezelése\" menüpontban, ha hiteles a profilja.</p>";
-          $msg.="<p><a href='localhost/chuushindojo/dynamic/index.php?pid=3'>Dojo kezelő honlap</a></p>";
-          $msg.="<p>Üdvözlettel:<br />Dojo kezelő</p>";
-          
-          if(!mail($to, "=?utf-8?B?".base64_encode($subject)."?=", $msg, $headers)){
-            $ok=false;
-            setMsg("<div class='error'>Legalább 1 illetékes (e-mailes) értesítése sikertelen a regisztrációs szándékról!</div>");
-          }
+        if(!mail($to, "=?utf-8?B?".base64_encode($subject)."?=", $msg, $headers)){
+          $ok=false;
+          setMsg("<div class='error'>".$data["nev"]." felhasználó (e-mailes) értesítése sikertelen a regisztráció jóváhagyásáról!</div>");
         }
-      }
-      else{
-        setMsg("<div class='error'>Nincs felhasználó, aki aktiválhatná a fiókod!</div>");
-        $ok=false;
       }
       
       return $ok;
@@ -301,23 +339,40 @@
     
     public function getMembers($active=false){
       global $conn;
-      $sql="select * from ".USERS." where aktiv=";
+      $output="";
+      
+      $sql = "select u.id as uid, u.*, d.id, d.nev as dojoNev, d.varos from ".USERS." as u inner join ".MEMBERSHIPS." as m on ".
+        "u.id=m.tag_id inner join ".DOJOS." as d on ".
+        "m.dojo_id=d.id where";
+      if($this->permissions=="__1_"){ //current user is a trainer
+        $trainerDojoId=$this->dojoId;
+        $sql.=" d.id=".$trainerDojoId." and";
+      }
+      $sql.=" u.aktiv=";
+      
       if($active) $sql.="1";
       else $sql.="0";
-      
-      $output="";
+      $sql.=" order by dojoNev,varos,u.nev";
+      //$output=$sql;
+      //return $output;
       $res=$conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
       if($res->num_rows){
         $action="content/";
         $action.=($active) ? "edit_members.php" : "activate_members.php";
         $output.='<form method="post" action="'.$action.'">';
+        
+        $dojoCache="";
         while($row=$res->fetch_assoc()){
+          //var_dump($row);
+          if($row["id"]!=$dojoCache) $output.="<h4>".$row["dojoNev"]." (".$row["varos"].")</h4>";
+          $dojoCache=$row["id"];
           $output.="<div>";
-          $output.="<input type='checkbox' checked='checked' name='";
+          $output.="<input type='checkbox'";
+          if($this->permissions=="__1_" && $row["jog"]=="admin") $output.=" disabled='disabled'";
+          $output.=" name='";
           if(!$active) $output.="activateUser[]";
           else $output.="editUser[]";
-          $output.="' value='".$row["id"]."' />&nbsp;";
-          $output.="<input type='hidden' name='names[]' value='".$row["nev"]."' />";
+          $output.="' value='".$row["uid"]."' />&nbsp;";
           $output.=$row["nev"]." (".$row["felhasznalonev"]."), regisztrált: ".$row["reg_datum"].", rang:&nbsp;";
           if(!$active){
             $output.="<select name='rank[]'>";
