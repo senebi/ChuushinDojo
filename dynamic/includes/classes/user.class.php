@@ -9,6 +9,7 @@
      * last char: Is visible to admins? (0/1)
      * Example of guest user permission mask: 1___
      */
+    private $rank;
     private $dojoId;
     
     public function __construct(){
@@ -16,12 +17,14 @@
       global $conn;
       $this->id = 0;
       $this->permissions = "1___";
+      $this->rank="tag";
       $permTable=array("tag" => "_1__", "edző" => "__1_", "admin" => "___1");
       
-      if(isset($_SESSION["userid"], $_SESSION["userperm"])){
+      if(isset($_SESSION["userId"], $_SESSION["userPerm"], $_SESSION["userRank"])){
         //user already logged in
-        $this->id = $_SESSION["userid"];
-        $this->permissions = $_SESSION["userperm"];
+        $this->id = $_SESSION["userId"];
+        $this->permissions = $_SESSION["userPerm"];
+        $this->rank=$_SESSION["userRank"];
       }
       else{
         //user is trying to log in, if the credentials match, let him/her in
@@ -37,15 +40,17 @@
               $data=$res->fetch_assoc();
               $salt=$data["so"];
               $dbPass=$data["jelszo"];
-              
+              echo $data["id"];
               //if the user profile is active
               if($data["aktiv"]=="1"){
                 //if the passwords match
                 if(crypt($pass,$salt)==$dbPass){
                   $this->id = $data["id"];
                   $this->permissions = $permTable[$data["jog"]];
-                  $_SESSION["userid"] = $this->id;
-                  $_SESSION["userperm"] = $this->permissions;
+                  $this->rank=$data["jog"];
+                  $_SESSION["userId"] = $this->id;
+                  $_SESSION["userPerm"] = $this->permissions;
+                  $_SESSION["userRank"]=$this->rank;
                   
                   setMsg("<div class='success'>Sikeres bejelentkezés.</div>");
                 }
@@ -90,6 +95,10 @@
       return $this->permissions;
     }
     
+    public function getRank(){
+      return $this->rank;
+    }
+    
     public function getName(){
       global $conn;
       
@@ -107,16 +116,21 @@
       return $name;
     }
     
-    public function getData(){
+    public function getData(array $fields=null){
       global $conn;
       
       if($this->id == 0){
         return false;
       }
       else{
+        if(!is_null($fields)){
+          $sql="select ".implode(", ",$fields)." from ".USERS." id=".$this->id;
+        }
+        else
         $sql = "select u.*, d.nev as dojoNev, d.varos from ".USERS." as u inner join ".MEMBERSHIPS." as m on ".
         "u.id=m.tag_id inner join ".DOJOS." as d on ".
         "m.dojo_id=d.id where u.id=".$this->id;
+        
         $res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
         if($res->num_rows){
           $data=$res->fetch_assoc();
@@ -233,16 +247,23 @@
             }
           }
         }
-        $_SESSION[$attr_name]=array("val" => $val, "err_msg" => "<div class='error'>".$msg."</div>");
+        if($msg!="")
+          $_SESSION[$attr_name]=array("val" => $val, "err_msg" => $msg);
+        else $_SESSION[$attr_name]=array("val" => $val);
       }
       
       $birthDate=strtotime($modData["birthYear"]."-".$modData["birthMonth"]."-".$modData["birthDay"]);
-      $birthParts=!($_SESSION["birthYear"]["err_msg"]=="error" || $_SESSION["birthMonth"]["err_msg"]=="error" || $_SESSION["birthDay"]["err_msg"]=="error" || $birthDate>strtotime(date("Y-m-d")));
+      $birthPartsOk=!(isset($_SESSION["birthYear"]["err_msg"]) || isset($_SESSION["birthMonth"]["err_msg"]) || isset($_SESSION["birthDay"]["err_msg"]));
       $msg="";
       //if error happened to any of the birth date parts or the date is greater than the current date
-      if(!$birthParts)
+      if(!$birthPartsOk){
         $msg="A születési dátum formátuma vagy értéke nem megfelelő!";
-      $_SESSION["birthDate"]=array("val" => $modData["birthYear"]."-".$modData["birthMonth"]."-".$modData["birthDay"], "err_msg" => $msg);
+        $_SESSION["birthDate"]=array("val" => $modData["birthYear"]."-".$modData["birthMonth"]."-".$modData["birthDay"], "err_msg" => $msg);
+      }
+      else if($birthDate>strtotime(date("Y-m-d"))){
+        $msg="A születési dátum nem lehet későbbi a mai napnál!";
+        $_SESSION["birthDate"]=array("val" => $modData["birthYear"]."-".$modData["birthMonth"]."-".$modData["birthDay"], "err_msg" => $msg);
+      }
       
       $modData["birthDate"]=$modData["birthYear"]."-".$modData["birthMonth"]."-".$modData["birthDay"];
       unset($modData["birthYear"]);
@@ -337,7 +358,7 @@
       return $ok;
     }
     
-    public function getMembers($active=false){
+    public function getMembers($active=false, $dojoId=null){
       global $conn;
       $output="";
       
@@ -348,27 +369,28 @@
         $trainerDojoId=$this->dojoId;
         $sql.=" d.id=".$trainerDojoId." and";
       }
+      else if($this->getRank()=="admin"){
+        if($dojoId!=null)
+          $sql.=" d.id=".$dojoId." and";
+      }
       $sql.=" u.aktiv=";
       
       if($active) $sql.="1";
       else $sql.="0";
       $sql.=" order by dojoNev,varos,u.nev";
-      //$output=$sql;
-      //return $output;
       $res=$conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
       if($res->num_rows){
-        $action="content/";
-        $action.=($active) ? "edit_members.php" : "activate_members.php";
+        $action="";
+        $action=($active) ? $_SERVER["PHP_SELF"]."?pid=5&sub1=show_member_details" : "content/activate_members.php";
         $output.='<form method="post" action="'.$action.'">';
         
         $dojoCache="";
         while($row=$res->fetch_assoc()){
-          //var_dump($row);
           if($row["id"]!=$dojoCache) $output.="<h4>".$row["dojoNev"]." (".$row["varos"].")</h4>";
           $dojoCache=$row["id"];
           $output.="<div>";
           $output.="<input type='checkbox'";
-          if($this->permissions=="__1_" && $row["jog"]=="admin") $output.=" disabled='disabled'";
+          if($this->rank!="admin" && $row["jog"]=="admin") $output.=" disabled='disabled'";
           $output.=" name='";
           if(!$active) $output.="activateUser[]";
           else $output.="editUser[]";
@@ -391,7 +413,7 @@
         $submitVal=(!$active) ? "Kijelöltek aktiválása" : "Kijelöltek szerkesztése";
         //$disabled=(!$active) ? " disabled='disabled'" : ""; //-----to be enabled in JS only (after page load)!-----
         $disabled="";
-        $output.="<p><input type='submit' name='".$submitName."' value='".$submitVal."'".$disabled." /></p>";
+        $output.="<p><button type='submit' name='".$submitName."' class='btn btn-primary mt-2' value='".$submitVal."'".$disabled.">".$submitVal."</button></p>";
         $output.="</form>";
       }
       else $output=false;
@@ -425,8 +447,9 @@
     }
     
     public function logout(){
-      unset($_SESSION["userid"]);
-      unset($_SESSION["userperm"]);
+      unset($_SESSION["userId"]);
+      unset($_SESSION["userPerm"]);
+      unset($_SESSION["userRank"]);
       $this->id = 0;
       $this->permissions = "1___";
       setMsg("<div class='success'>Sikeres kijelentkezés.</div>");

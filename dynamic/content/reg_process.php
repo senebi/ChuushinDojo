@@ -9,7 +9,7 @@
 	if(isset($_POST["reg_id"])){
 		$user=new User();
 		$validated=$user->validateRegister($_POST);
-		if($validated){			
+		if($validated){
 			if($user->register($validated)){
 				if($user->notifyByEmail($validated,"reg"))
 					$_SESSION["reg_state"]="success";
@@ -19,7 +19,7 @@
 			header("location: ../index.php?redirect=reg_state");
 		}
 		else
-			header("location: ../index.php?pid=".$_POST["reg_id"]);
+			header("location: ../index.php?pid=".$_POST["reg_id"]."&fail=1");
 	}
 	else header("location: ../index.php?pid=404");
 ?>

@@ -8,7 +8,7 @@
       include_once($contentDir."/header.php");
     ?>
     
-    <article>
+    <article class="p-2">
     <?php
       if(isset($_GET["redirect"])){
         $redirect=sanitize($_GET["redirect"]);

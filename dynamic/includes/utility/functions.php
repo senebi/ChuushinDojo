@@ -12,14 +12,38 @@
 	 */
 	function clearErrors(){
 		foreach($_SESSION as $name => $val){
-			if(isset($_SESSION[$name]["err_msg"]))
-				unset($_SESSION[$name]);
+			/*if(!is_array($_SESSION[$name])) echo "\$_SESSION[\"".$name."\"]=".$val."<br />";
+			else{
+				echo $name.":<br />";
+				var_dump($_SESSION[$name]);
+				echo "<br />";
+			}*/
+			if(isset($_SESSION[$name]["err_msg"])){
+				unset($_SESSION[$name]["err_msg"]);
+			}
 			else{
 				if(is_array($_SESSION[$name])){
-					$i=0;
-					while(isset($_SESSION[$name][$i]["err_msg"])){
+					for($i=0;$i<count($_SESSION[$name]);$i++){
 						unset($_SESSION[$name][$i]["err_msg"]);
-						$i++;
+					}
+				}
+			}
+		}
+		//var_dump($_SESSION);
+	}
+	
+	/*
+	 * Clear all registration data
+	 */
+	function clearRegData(){
+		foreach($_SESSION as $name => $val){
+			if(isset($_SESSION[$name])){
+				unset($_SESSION[$name]);
+			}
+			else{
+				if(is_array($_SESSION[$name])){
+					for($i=0;$i<count($_SESSION[$name]);$i++){
+						unset($_SESSION[$name][$i]);
 					}
 				}
 			}
@@ -69,4 +93,23 @@
 			return $mail;
 		}
 	}
+	
+	function getSpecificData($id=null){
+		if(is_null($id)){
+		  setMsg("<div class='error'>A felhasználó azonosítóját kötelező megadni!</div>");
+		  return false;
+		}
+		else{
+			global $conn;
+			$sql = "select u.*, d.nev as dojoNev, d.varos from ".USERS." as u inner join ".MEMBERSHIPS." as m on ".
+			"u.id=m.tag_id inner join ".DOJOS." as d on ".
+			"m.dojo_id=d.id where u.id=".$id;
+			$res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
+			if($res->num_rows){
+			  $data=$res->fetch_assoc();
+			}
+			else return false;
+		}
+		return $data;
+    }
 ?>

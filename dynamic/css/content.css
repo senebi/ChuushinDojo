@@ -48,3 +48,7 @@ article {
   margin-right: 3vw;
   float: right;
 }
+
+.invalid-feedback{
+  display: block !important;
+}

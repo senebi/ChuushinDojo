@@ -23,6 +23,7 @@
   $user=new User();
   
   echo "<h2>Aktiválandók:</h2>";
+  $ok=true; //update necessary: we have to check every activation before redirecting
   for($i=0; $i<$userCount; $i++){
 	$id=sanitize($users[$i]);
 	$rank=sanitize($ranks[$i]);
@@ -32,9 +33,13 @@
 	$res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");
 	$userData=array("id" => $id, "nev" => $name, "email" => getSpecificMail($id));
 	
-	if($user->notifyByEmail($userData,"approve")){
-	  setMsg("<div class='success'>Sikeres aktiválás.</div>");
-	  header("location: ../index.php?pid=5");
+	if(!$user->notifyByEmail($userData,"approve")){
+	  $ok=false;
 	}
   }
+  //the loop bug has been fixed
+  if(!$ok) setMsg("<div class='error'>Legalább 1 tag (e-mailes) értesítése sikertelen a regisztráció aktiválásáról!</div>");
+  else setMsg("<div class='success'>Sikeres aktiválás.</div>");
+  
+  header("location: ../index.php?pid=5");
 ?>

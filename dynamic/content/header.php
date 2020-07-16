@@ -18,10 +18,14 @@
     <meta name="ROBOTS" content="index"/>
     <meta name="AUTHOR" content="Chuushin Dojo"/>
     <meta name="COPYRIGHT" content="Chuushin Dojo"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
       <!-- CSS ==> font-family: 'Roboto', sans-serif; -->
+	  <!-- Bootstrap CSS -->
+	<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
       <!-- Header CSS -->
     <link rel="stylesheet" type="text/css" href="<?php echo $rootDir; ?>css/header.css">
       <!-- Body CSS -->
@@ -31,7 +35,7 @@
       <!-- Content CSS -->
     <link rel="stylesheet" type="text/css" href="<?php echo $rootDir; ?>css/content.css">
       <!-- Footer CSS -->
-    <link rel="stylesheet" type="text/css" href="">
+    <link rel="stylesheet" type="text/css" href="<?php echo $rootDir; ?>css/footer.css">
     <!-- Used colors ==> Grey: #E9EBEE, White: #FFFFFF, Blue: #36374B  -->
     
     <!-- FontAwesome link -->
