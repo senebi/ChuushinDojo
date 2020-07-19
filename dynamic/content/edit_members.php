@@ -27,8 +27,8 @@
 	$beltDegree=sanitize($beltDegrees[$i]);
 	$name=getSpecificName($id);
 
-	$sql="update ".USERS." set beiratkozas_datum=".(($startDate=="") ? "null" : "'".$startDate."'").", ovfokozat=".(($beltDegree=="none") ? "null" : "'".$beltDegree."'");
-	if(isset($ranks))
+	$sql="update ".USERS." set beiratkozas_datum=".(($startDate=="") ? "null" : "'".$startDate."'").", ovfokozat='".$beltDegree."'";
+	if(isset($ranks) && $user->getRank()=="admin")
 	  $sql.=", jog='".sanitize($ranks[$i])."'";
 	$sql.=" where id=".$id;
 	$res = $conn->query($sql) or die($conn->error." on line <b>".__LINE__."</b>");

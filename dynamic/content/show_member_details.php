@@ -54,7 +54,7 @@
 		  <td class="p-1"><?php echo $data["reg_datum"]; ?></td>
 		  <td class="p-1">
 			<select name="beltDegree[]">
-			<option value="non">nincs</option>
+			<option value="nincs">nincs</option>
 			<?php
 			for($j=6; $j>0; $j--){
 			  $degree=$j." kyu";
@@ -102,4 +102,4 @@
 	  <button type="submit" name="editSelected-submit" class="btn btn-primary">Mentés</button>
 	</div>
   </form>
-  <a href="javascript:history.back()">Vissza</a>
+  <a href="<?php echo (isset($_POST["from"])) ? "index.php?".$_POST["from"] : "javascript:history.back()"; ?>">Vissza</a>

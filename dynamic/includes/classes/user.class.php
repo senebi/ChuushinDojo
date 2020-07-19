@@ -40,7 +40,6 @@
               $data=$res->fetch_assoc();
               $salt=$data["so"];
               $dbPass=$data["jelszo"];
-              echo $data["id"];
               //if the user profile is active
               if($data["aktiv"]=="1"){
                 //if the passwords match
@@ -51,6 +50,20 @@
                   $_SESSION["userId"] = $this->id;
                   $_SESSION["userPerm"] = $this->permissions;
                   $_SESSION["userRank"]=$this->rank;
+                  if(isset($_POST["saveCredentials"])){
+                    //set user and password cookies
+                    if(!isset($_COOKIE["dojoUser"]) && !isset($_COOKIE["dojoPass"])){
+                      //the cookies will expire in 30 days
+                      setcookie("dojoUser", $user, time()+86400*30, "/");
+                      setcookie("dojoPass", $pass, time()+86400*30, "/");
+                    }
+                  }
+                  else{
+                    if(isset($_COOKIE["dojoUser"], $_COOKIE["dojoPass"])){
+                      setcookie("dojoUser", "", time()-3600, "/");
+                      setcookie("dojoPass", "", time()-3600, "/");
+                    }
+                  }
                   
                   setMsg("<div class='success'>Sikeres bejelentkezés.</div>");
                 }
@@ -413,6 +426,9 @@
         $submitVal=(!$active) ? "Kijelöltek aktiválása" : "Kijelöltek szerkesztése";
         //$disabled=(!$active) ? " disabled='disabled'" : ""; //-----to be enabled in JS only (after page load)!-----
         $disabled="";
+        $fromVal=$_SERVER["QUERY_STRING"];
+        if($dojoId!=null && !isset($_GET["dojoId"])) $fromVal.="&dojoId=".$dojoId;
+        $output.="<input type='hidden' name='from' value='".$fromVal."' />";
         $output.="<p><button type='submit' name='".$submitName."' class='btn btn-primary mt-2' value='".$submitVal."'".$disabled.">".$submitVal."</button></p>";
         $output.="</form>";
       }

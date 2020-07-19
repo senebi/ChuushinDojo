@@ -20,18 +20,18 @@
   <div class="form-group row justify-content-center">
     <label for="user" class="col-sm-2 col-form-label">Felhasználónév</label>
 	<div class="col-sm-4">
-	  <input type="text" class="form-control form-control-sm" id="user" name="user" placeholder="Felhasználónév">
+	  <input type="text" class="form-control form-control-sm" id="user" name="user" placeholder="Felhasználónév" value="<?php if(isset($_COOKIE["dojoUser"])) echo $_COOKIE["dojoUser"]; ?>" />
 	</div>
   </div>
   <div class="form-group row justify-content-center">
     <label for="pass" class="col-sm-2 col-form-label">Jelszó</label>
 	<div class="col-sm-4">
-	  <input type="password" name="pass" class="form-control form-control-sm" id="pass" placeholder="Jelszó">
+	  <input type="password" name="pass" class="form-control form-control-sm" id="pass" placeholder="Jelszó" value="<?php if(isset($_COOKIE["dojoPass"])) echo $_COOKIE["dojoPass"]; ?>" />
 	</div>
   </div>
   <div class="form-group row justify-content-center">
 	<div class="form-check pl-5">
-	  <input type="checkbox" aria-describedby="saveCredentialsHelp" class="form-check-input" id="saveCredentials">
+	  <input type="checkbox" aria-describedby="saveCredentialsHelp" class="form-check-input" name="saveCredentials" id="saveCredentials" <?php if(isset($_COOKIE["dojoUser"],$_COOKIE["dojoPass"])) echo "checked"; ?>>
 	  <label class="form-check-label" for="saveCredentials">Emlékezz rám</label>
 	  <small id="saveCredentialsHelp" class="form-text text-muted">Ha bejelölöd, a bejelentkezési adataid mentésre kerülnek, így nem kell mindig beírnod őket.</small>
 	</div>

@@ -32,6 +32,7 @@
 		  <form method="post" action="?pid=<?php echo $page->getPid(); ?>&sub1=show_dojo_members">
 		  <?php
 			echo $dojo->getDojos("radio",0);
+			echo "<input type='hidden' name='from' value='".$_SERVER["QUERY_STRING"]."' />";
 		  ?>
 		  <p><button type="submit" name="dojoSelect-submit" class="btn btn-primary mt-2" value="Tagok megjelenítése">Tagok megjelenítése</button></p>
 		  </form>

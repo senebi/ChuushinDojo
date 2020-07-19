@@ -37,7 +37,7 @@
 	<td><?php echo ($userData["reg_datum"]!="") ? $userData["reg_datum"] : "nincs adat"; ?></td>
   </tr>
   <tr><td>Övfokozat: </td>
-	<td><?php echo ($userData["ovfokozat"]!="") ? $userData["ovfokozat"] : "nincs adat"; ?></td>
+	<td><?php echo ($userData["ovfokozat"]!="") ? $userData["ovfokozat"] : "nincs"; ?></td>
   </tr>
   <tr><td>Rang: </td>
 	<td><?php echo $userData["jog"]; ?></td>
